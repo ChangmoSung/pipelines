@@ -6,7 +6,7 @@ from pymongo import MongoClient
 
 from blueprints.function_calling_blueprint import Pipeline as FunctionCallingBlueprint
 
-
+result = {}
 class Pipeline(FunctionCallingBlueprint):
     class Tools:
         def __init__(self, pipeline) -> None:
@@ -70,6 +70,13 @@ class Pipeline(FunctionCallingBlueprint):
         query = {"status": "active"}  # Example query, modify based on the prompt
         
         result = self.collection.find(query)
-        print('Testing pipeline Mongo result', result)
 
         return list(result)
+    
+    async def outlet(self, body: dict, user: Optional[dict] = None) -> dict:
+        print.info('Testing pipeline Mongo result', result)
+
+        print(f"outlet:{__name__}")
+        print(f"Received body: {body}")
+        self.file_contents=[]
+        return body
