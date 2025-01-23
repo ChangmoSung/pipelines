@@ -74,7 +74,7 @@ class Pipeline(FunctionCallingBlueprint):
         return list(result)
     
     async def outlet(self, body: dict, user: Optional[dict] = None) -> dict:
-        print.info('Testing pipeline Mongo result', result)
+        print('Testing pipeline Mongo result', result)
 
         print(f"outlet:{__name__}")
         print(f"Received body: {body}")
