@@ -2,17 +2,12 @@ import os
 import requests
 from typing import Literal, List, Optional
 from datetime import datetime
-
+from pymongo import MongoClient
 
 from blueprints.function_calling_blueprint import Pipeline as FunctionCallingBlueprint
 
 
 class Pipeline(FunctionCallingBlueprint):
-    class Valves(FunctionCallingBlueprint.Valves):
-        # Add your custom parameters here
-        OPENWEATHERMAP_API_KEY: str = ""
-        pass
-
     class Tools:
         def __init__(self, pipeline) -> None:
             self.pipeline = pipeline
@@ -29,42 +24,6 @@ class Pipeline(FunctionCallingBlueprint):
             now = datetime.now()
             current_time = now.strftime("%H:%M:%S")
             return f"Current Time = {current_time}"
-
-        def get_current_weather(
-            self,
-            location: str,
-            unit: Literal["metric", "fahrenheit"] = "fahrenheit",
-        ) -> str:
-            """
-            Get the current weather for a location. If the location is not found, return an empty string.
-
-            :param location: The location to get the weather for.
-            :param unit: The unit to get the weather in. Default is fahrenheit.
-            :return: The current weather for the location.
-            """
-
-            # https://openweathermap.org/api
-
-            if self.pipeline.valves.OPENWEATHERMAP_API_KEY == "":
-                return "OpenWeatherMap API Key not set, ask the user to set it up."
-            else:
-                units = "imperial" if unit == "fahrenheit" else "metric"
-                params = {
-                    "q": location,
-                    "appid": self.pipeline.valves.OPENWEATHERMAP_API_KEY,
-                    "units": units,
-                }
-
-                response = requests.get(
-                    "http://api.openweathermap.org/data/2.5/weather", params=params
-                )
-                response.raise_for_status()  # Raises an HTTPError for bad responses
-                data = response.json()
-
-                weather_description = data["weather"][0]["description"]
-                temperature = data["main"]["temp"]
-
-                return f"{location}: {weather_description.capitalize()}, {temperature}°{unit.capitalize()[0]}"
 
         def calculator(self, equation: str) -> str:
             """
@@ -94,7 +53,23 @@ class Pipeline(FunctionCallingBlueprint):
             **{
                 **self.valves.model_dump(),
                 "pipelines": ["*"],  # Connect to all pipelines
-                "OPENWEATHERMAP_API_KEY": os.getenv("OPENWEATHERMAP_API_KEY", ""),
             },
         )
         self.tools = self.Tools(self)
+
+        self.client = MongoClient("mongodb+srv://zofiq-pod:4HQy7EIi4TNby6cK@zofiq-mongo.9pudj.mongodb.net/?appName=Zofiq-Mongo")
+        self.db = self.client["connectwiseData"]
+        self.collection = self.db["tickets"]
+
+    def run(self, prompt, context):
+        print('Testing run method')
+        """
+        This method runs when the pipeline is called.
+        It queries MongoDB based on user prompt and returns the results.
+        """
+        query = {"status": "active"}  # Example query, modify based on the prompt
+        
+        result = self.collection.find(query)
+        print('Testing pipeline Mongo result', result)
+
+        return list(result)
